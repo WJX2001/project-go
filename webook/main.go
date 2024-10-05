@@ -1,6 +1,11 @@
 package main
 
 import (
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+	"project-go/webook/internal/repository"
+	"project-go/webook/internal/repository/dao"
+	"project-go/webook/internal/service"
 	user "project-go/webook/internal/web"
 	"strings"
 	"time"
@@ -10,6 +15,26 @@ import (
 )
 
 func main() {
+
+	// 进行初始化
+	db, err := gorm.Open(mysql.Open("root:root@tcp(localhost:13316)/webook"))
+	if err != nil {
+		// 只会在初始化过程中 panic
+		// panic 相当于整个 goroutine 结束
+		// 一旦初始化过程出错，应用就不要启动了
+		panic(err)
+	}
+
+	err = dao.InitTable(db)
+	if err != nil {
+		panic(err)
+	}
+
+	ud := dao.NewUserDAO(db)
+	repo := repository.NewUserRepository(ud)
+	svc := service.NewUserService(repo)
+	u := user.NewUserHandler(svc)
+
 	server := gin.Default()
 
 	// 使用中间件
@@ -31,8 +56,6 @@ func main() {
 		},
 		MaxAge: 12 * time.Hour,
 	}))
-
-	u := user.NewUserHandler()
 	u.RegisterRoutesUser(server)
 	server.Run("localhost:8080")
 }

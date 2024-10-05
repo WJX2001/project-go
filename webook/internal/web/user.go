@@ -50,8 +50,8 @@ func (u *UserHandler) SignUp(ctx *gin.Context) {
 	// 定义在里面 防止其他人调用
 	type SignUpReq struct {
 		Email           string `json:"emailInfo"`
-		ConfirmPassword string `json: "passwordConfirm"`
-		Password        string `json: "password"`
+		ConfirmPassword string `json:"passwordConfirm"`
+		Password        string `json:"password"`
 	}
 
 	var req SignUpReq
@@ -91,7 +91,7 @@ func (u *UserHandler) SignUp(ctx *gin.Context) {
 		return
 	}
 
-	// 调用一下 svc 的方法
+	// 调用一下 svc 的方法 进行注册
 	err = u.svc.SignUp(ctx, domain.User{
 		Email:    req.Email,
 		Password: req.Password,
@@ -100,7 +100,7 @@ func (u *UserHandler) SignUp(ctx *gin.Context) {
 		ctx.String(http.StatusOK, "系统异常")
 		return
 	}
-	ctx.String(http.StatusOK, "hello 你在注册")
+	ctx.String(http.StatusOK, "注册成功")
 	fmt.Printf("%v", req)
 
 }
