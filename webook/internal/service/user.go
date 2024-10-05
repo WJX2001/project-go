@@ -25,21 +25,21 @@ func NewUserService(repo *repository.UserRepository) *UserService {
 }
 
 // 登陆
-func (svc *UserService) Login(ctx context.Context, u domain.User) error {
+func (svc *UserService) Login(ctx context.Context, u domain.User) (user domain.User, err error) {
 	// 先找用户
 	findUser, err := svc.repo.FindByEmail(ctx, u.Email)
 	if err == repository.ErrUserNotFound {
-		return ErrInvalidUserOrPassword
+		return domain.User{}, ErrInvalidUserOrPassword
 	}
 	if err != nil {
-		return err
+		return domain.User{}, err
 	}
 	// 比较密码
 	err = bcrypt.CompareHashAndPassword([]byte(findUser.Password), []byte(u.Password))
 	if err != nil {
-		return ErrUserNotFound
+		return domain.User{}, ErrUserNotFound
 	}
-	return err
+	return u, err
 }
 
 func (svc *UserService) SignUp(ctx context.Context, u domain.User) error {

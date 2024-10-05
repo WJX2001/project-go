@@ -7,10 +7,13 @@ import (
 	"project-go/webook/internal/repository/dao"
 	"project-go/webook/internal/service"
 	user "project-go/webook/internal/web"
+	"project-go/webook/internal/web/middleware"
 	"strings"
 	"time"
 
 	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 )
 
@@ -29,7 +32,7 @@ func initWebServer() *gin.Engine {
 	// 使用中间件
 	// 使用use 表明应用在server上的所有路由
 	server.Use(cors.New(cors.Config{
-		// AllowOrigins:  []string{"http://localhost:8000"},
+		//AllowOrigins:  []string{"http://localhost:8000"},
 		AllowMethods:  []string{"POST", "GET"},
 		AllowHeaders:  []string{"content-type", "Authorization"},
 		ExposeHeaders: []string{"x-jwt-token"}, // 后续JWT会使用
@@ -45,6 +48,17 @@ func initWebServer() *gin.Engine {
 		},
 		MaxAge: 12 * time.Hour,
 	}))
+
+	// 配置session
+	// 步骤一
+	store := cookie.NewStore([]byte("secret"))
+	server.Use(sessions.Sessions("mysession", store))
+	// 步骤三
+	server.Use(middleware.NewLoginMiddlewareBuilder().
+		IgnorePaths("/user/signup").
+		IgnorePaths("/user/login").
+		Build())
+
 	return server
 }
 

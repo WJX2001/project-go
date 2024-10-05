@@ -3,6 +3,7 @@ package user
 import (
 	"fmt"
 	regexp "github.com/dlclark/regexp2"
+	"github.com/gin-contrib/sessions"
 	"net/http"
 	"project-go/webook/internal/domain"
 	"project-go/webook/internal/service"
@@ -123,7 +124,7 @@ func (u *UserHandler) Login(ctx *gin.Context) {
 	}
 
 	// 调用 svc
-	err := u.svc.Login(ctx, domain.User{
+	user, err := u.svc.Login(ctx, domain.User{
 		Email:    req.Email,
 		Password: req.PassWord,
 	})
@@ -136,6 +137,12 @@ func (u *UserHandler) Login(ctx *gin.Context) {
 		ctx.String(http.StatusOK, "系统错误")
 		return
 	}
+	// 在这里登陆成功了
+	// 将session取出来
+	sessionInfo := sessions.Default(ctx)
+	// 可以随便设置，放入session的值
+	sessionInfo.Set("userId", user.Id)
+	sessionInfo.Save()
 
 	ctx.String(http.StatusOK, "登陆成功")
 	return
@@ -146,5 +153,5 @@ func (u *UserHandler) Edit(ctx *gin.Context) {
 }
 
 func (u *UserHandler) Profile(ctx *gin.Context) {
-
+	ctx.String(http.StatusOK, "查看profile消息")
 }
