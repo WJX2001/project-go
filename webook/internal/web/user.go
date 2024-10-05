@@ -4,18 +4,21 @@ import (
 	"fmt"
 	regexp "github.com/dlclark/regexp2"
 	"net/http"
+	"project-go/webook/internal/domain"
+	"project-go/webook/internal/service"
 
 	"github.com/gin-gonic/gin"
 )
 
 // UserHandler 在此定义跟 user有关的路由
 type UserHandler struct {
+	svc         *service.UserService
 	emailExp    *regexp.Regexp
 	passwordExp *regexp.Regexp
 }
 
 // 不需要每次都编译，只需要暴露方法 进行预编译
-func NewUserHandler() *UserHandler {
+func NewUserHandler(svc *service.UserService) *UserHandler {
 	// 定义正则表达式
 	const (
 		emailRegexPattern    = `^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`
@@ -26,6 +29,7 @@ func NewUserHandler() *UserHandler {
 	passwordExp := regexp.MustCompile(passwordRegexPattern, regexp.None)
 
 	return &UserHandler{
+		svc:         svc,
 		emailExp:    emailExp,
 		passwordExp: passwordExp,
 	}
@@ -46,7 +50,7 @@ func (u *UserHandler) SignUp(ctx *gin.Context) {
 	// 定义在里面 防止其他人调用
 	type SignUpReq struct {
 		Email           string `json:"emailInfo"`
-		PasswordConfirm string `json: "passwordConfirm"`
+		ConfirmPassword string `json: "passwordConfirm"`
 		Password        string `json: "password"`
 	}
 
@@ -77,7 +81,7 @@ func (u *UserHandler) SignUp(ctx *gin.Context) {
 		return
 	}
 
-	if req.PasswordConfirm != req.Password {
+	if req.ConfirmPassword != req.Password {
 		ctx.String(http.StatusOK, "两次密码不一致")
 		return
 	}
@@ -87,9 +91,18 @@ func (u *UserHandler) SignUp(ctx *gin.Context) {
 		return
 	}
 
+	// 调用一下 svc 的方法
+	err = u.svc.SignUp(ctx, domain.User{
+		Email:    req.Email,
+		Password: req.Password,
+	})
+	if err != nil {
+		ctx.String(http.StatusOK, "系统异常")
+		return
+	}
 	ctx.String(http.StatusOK, "hello 你在注册")
 	fmt.Printf("%v", req)
-	// 这边就是数据库操作
+
 }
 
 func (u *UserHandler) Login(ctx *gin.Context) {
