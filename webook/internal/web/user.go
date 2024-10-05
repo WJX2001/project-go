@@ -22,7 +22,7 @@ func NewUserHandler(svc *service.UserService) *UserHandler {
 	// 定义正则表达式
 	const (
 		emailRegexPattern    = `^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`
-		passwordRegexPattern = `^(?=.*[0-9])(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,}$`
+		passwordRegexPattern = `^(?=.*[0-9])(?=.*[!@#$%^&*])[A-Za-z\d!@#$%^&*]{8,72}$`
 	)
 
 	emailExp := regexp.MustCompile(emailRegexPattern, regexp.None)
@@ -96,12 +96,17 @@ func (u *UserHandler) SignUp(ctx *gin.Context) {
 		Email:    req.Email,
 		Password: req.Password,
 	})
+
+	if err == service.ErrUserDuplicateEmail {
+		ctx.String(http.StatusOK, "邮箱冲突")
+		return
+	}
+
 	if err != nil {
 		ctx.String(http.StatusOK, "系统异常")
 		return
 	}
 	ctx.String(http.StatusOK, "注册成功")
-	fmt.Printf("%v", req)
 
 }
 
