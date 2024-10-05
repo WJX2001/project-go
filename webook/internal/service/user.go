@@ -2,12 +2,17 @@ package service
 
 import (
 	"context"
+	"errors"
 	"golang.org/x/crypto/bcrypt"
 	"project-go/webook/internal/domain"
 	"project-go/webook/internal/repository"
 )
 
-var ErrUserDuplicateEmail = repository.ErrUserDuplicateEmail
+var (
+	ErrUserDuplicateEmail = repository.ErrUserDuplicateEmail
+	ErrUserNotFound       = repository.ErrUserNotFound
+)
+var ErrInvalidUserOrPassword = errors.New("invalid user/password")
 
 type UserService struct {
 	repo *repository.UserRepository
@@ -17,6 +22,24 @@ func NewUserService(repo *repository.UserRepository) *UserService {
 	return &UserService{
 		repo: repo,
 	}
+}
+
+// 登陆
+func (svc *UserService) Login(ctx context.Context, u domain.User) error {
+	// 先找用户
+	findUser, err := svc.repo.FindByEmail(ctx, u.Email)
+	if err == repository.ErrUserNotFound {
+		return ErrInvalidUserOrPassword
+	}
+	if err != nil {
+		return err
+	}
+	// 比较密码
+	err = bcrypt.CompareHashAndPassword([]byte(findUser.Password), []byte(u.Password))
+	if err != nil {
+		return ErrUserNotFound
+	}
+	return err
 }
 
 func (svc *UserService) SignUp(ctx context.Context, u domain.User) error {
