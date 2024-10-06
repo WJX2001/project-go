@@ -4,6 +4,7 @@ import (
 	"context"
 	"project-go/webook/internal/domain"
 	"project-go/webook/internal/repository/dao"
+	"time"
 )
 
 var (
@@ -41,6 +42,17 @@ func (r *UserRepository) Create(ctx context.Context, u domain.User) error {
 	// 操作缓存
 }
 
+func (r *UserRepository) toDomain(u dao.User) domain.User {
+	return domain.User{
+		Id:       u.Id,
+		Email:    u.Email,
+		Password: u.Password,
+		AboutMe:  u.AboutMe,
+		Nickname: u.Nickname,
+		Birthday: time.UnixMilli(u.Birthday),
+	}
+}
+
 func (r *UserRepository) toEntity(u domain.User) dao.User {
 	return dao.User{
 		Id:       u.Id,
@@ -57,8 +69,10 @@ func (r *UserRepository) UpdateNonZeroFields(ctx context.Context, u domain.User)
 	return r.dao.UpdateById(ctx, r.toEntity(u))
 }
 
-func (r *UserRepository) FindById(int64) {
-	// 先从 cache 里面找
-	// 再从 dao 里面找
-	// 找到了回写 cache
+func (r *UserRepository) FindById(ctx context.Context, uid int64) (domain.User, error) {
+	u, err := r.dao.FindById(ctx, uid)
+	if err != nil {
+		return domain.User{}, err
+	}
+	return r.toDomain(u), nil
 }

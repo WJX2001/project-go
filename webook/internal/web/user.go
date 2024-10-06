@@ -152,6 +152,7 @@ func (u *UserHandler) Edit(ctx *gin.Context) {
 	type Req struct {
 		// 改邮箱 密码 或者能不能改手机号
 		Nickname string `json:"nickname"`
+		// YYYY-MM-DD
 		Birthday string `json:"birthday"`
 		AboutMe  string `json:"aboutMe"`
 	}
@@ -189,5 +190,28 @@ func (u *UserHandler) Edit(ctx *gin.Context) {
 }
 
 func (u *UserHandler) Profile(ctx *gin.Context) {
-	ctx.String(http.StatusOK, "查看profile消息")
+
+	// 从session中获取登陆状态
+	sess := sessions.Default(ctx)
+	sessionId := sess.Get("userId").(int64)
+
+	userInfo, err := u.svc.FindById(ctx, sessionId)
+	if err != nil {
+		ctx.String(http.StatusOK, "系统异常")
+		return
+	}
+
+	type User struct {
+		Nickname string `json:"nickname"`
+		Email    string `json:"email"`
+		AboutMe  string `json:"aboutMe"`
+		Birthday string `json:"birthday"`
+	}
+	ctx.JSON(http.StatusOK, User{
+		Nickname: userInfo.Nickname,
+		Email:    userInfo.Email,
+		AboutMe:  userInfo.AboutMe,
+		Birthday: userInfo.Birthday.Format(time.DateOnly),
+	})
+
 }
