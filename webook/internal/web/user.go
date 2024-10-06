@@ -4,6 +4,7 @@ import (
 	"fmt"
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-contrib/sessions"
+	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"project-go/webook/internal/domain"
 	"project-go/webook/internal/service"
@@ -43,7 +44,7 @@ func (u *UserHandler) RegisterRoutesUser(server *gin.Engine) {
 	ug := server.Group("/user")
 	ug.GET("/profile", u.Profile)
 	ug.POST("/signup", u.SignUp)
-	ug.POST("/login", u.Login)
+	ug.POST("/login", u.LoginJWT)
 	ug.POST("/edit", u.Edit)
 	ug.GET("/logout", u.Logout)
 }
@@ -112,6 +113,48 @@ func (u *UserHandler) SignUp(ctx *gin.Context) {
 	ctx.String(http.StatusOK, "注册成功")
 	return
 
+}
+
+func (u *UserHandler) LoginJWT(ctx *gin.Context) {
+	type LoginReq struct {
+		Email    string `json:"email"`
+		PassWord string `json:"password"`
+	}
+
+	var req LoginReq
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+
+	// 调用 svc
+	user, err := u.svc.Login(ctx, domain.User{
+		Email:    req.Email,
+		Password: req.PassWord,
+	})
+
+	if err == service.ErrInvalidUserOrPassword {
+		ctx.String(http.StatusOK, "用户名或密码不对")
+		return
+	}
+	if err != nil {
+		ctx.String(http.StatusOK, "系统错误")
+		return
+	}
+
+	// TODO: 在这里使用JWT登陆态
+	// 生成一个 JWT token
+	token := jwt.New(jwt.SigningMethodHS512)
+	tokenStr, err := token.SignedString([]byte("IjkxUQzY7dMQ4gdYLUMVvMXsIpl1E7f4"))
+	if err != nil {
+		ctx.String(http.StatusInternalServerError, "系统错误")
+		return
+	}
+	// 将token 放到header中
+	ctx.Header("x-jwt-token", tokenStr)
+	fmt.Println(tokenStr)
+	fmt.Println(user)
+	ctx.String(http.StatusOK, "登陆成功")
+	return
 }
 
 func (u *UserHandler) Login(ctx *gin.Context) {

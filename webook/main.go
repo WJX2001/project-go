@@ -33,8 +33,9 @@ func initWebServer() *gin.Engine {
 	// 使用use 表明应用在server上的所有路由
 	server.Use(cors.New(cors.Config{
 		//AllowOrigins:  []string{"http://localhost:8000"},
-		AllowMethods:  []string{"POST", "GET"},
-		AllowHeaders:  []string{"content-type", "Authorization"},
+		AllowMethods: []string{"POST", "GET"},
+		AllowHeaders: []string{"content-type", "Authorization"},
+		// 不加此配置，前端拿不到jwt-token
 		ExposeHeaders: []string{"x-jwt-token"}, // 后续JWT会使用
 		// 是否允许带 cookie 之类的东西
 		AllowCredentials: true,
@@ -77,9 +78,17 @@ func initWebServer() *gin.Engine {
 	}
 	server.Use(sessions.Sessions("mysession", store))
 	// 步骤三
-	server.Use(middleware.NewLoginMiddlewareBuilder().
-		IgnorePaths("/user/signup").
-		IgnorePaths("/user/login").
+
+	// Session 的中间件
+	//server.Use(middleware.NewLoginMiddlewareBuilder().
+	//	IgnorePaths("/user/signup").
+	//	IgnorePaths("/user/login").
+	//	Build())
+
+	// JWT的中间件
+	server.Use(middleware.NewLoginJWTMiddlewareBuilder().
+		JWTIgnorePaths("/user/signup").
+		JWTIgnorePaths("/user/login").
 		Build())
 
 	return server
