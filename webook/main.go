@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/gin-contrib/sessions/redis"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"project-go/webook/internal/repository"
@@ -13,7 +14,6 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 )
 
@@ -50,8 +50,31 @@ func initWebServer() *gin.Engine {
 	}))
 
 	// 配置session
-	// 步骤一
-	store := cookie.NewStore([]byte("secret"))
+	/**
+	步骤一（选择存储方式）：
+		同理也可换成 memStore 和 Redis
+	*/
+	//store := cookie.NewStore([]byte("secret"))
+
+	// 替换存储为redis
+	/**
+		第一个参数是最大空闲连接数量
+		第二个就是 tcp
+	    第三个，第四个就是连接信息和密码
+	    第五，第六就是两个key
+	*/
+	store, err := redis.NewStore(16, "tcp", "localhost:6379", "",
+		// authentication key, encryption key
+		/**
+			authentication: 是指身份认证
+		    encryption: 是指数据加密
+		    这两者再加上授权（权限控制），就是信息安全的三个核心概念
+		*/
+		[]byte("fdDxNKZ6hNsXe1Ax5GWjbSlTKNhxSmZU"),
+		[]byte("rcziTpeJ0dhwGKN6v3sHBCu92J0pmK9y"))
+	if err != nil {
+		panic(err)
+	}
 	server.Use(sessions.Sessions("mysession", store))
 	// 步骤三
 	server.Use(middleware.NewLoginMiddlewareBuilder().

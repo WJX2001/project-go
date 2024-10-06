@@ -45,6 +45,7 @@ func (u *UserHandler) RegisterRoutesUser(server *gin.Engine) {
 	ug.POST("/signup", u.SignUp)
 	ug.POST("/login", u.Login)
 	ug.POST("/edit", u.Edit)
+	ug.GET("/logout", u.Logout)
 }
 
 // 注册
@@ -143,9 +144,18 @@ func (u *UserHandler) Login(ctx *gin.Context) {
 	sessionInfo := sessions.Default(ctx)
 	// 可以随便设置，放入session的值
 	sessionInfo.Set("userId", user.Id)
-	sessionInfo.Save()
+	sessionInfo.Save() // sessionInfo进行保存
 	ctx.String(http.StatusOK, "登陆成功")
 	return
+}
+
+func (u *UserHandler) Logout(ctx *gin.Context) {
+	sess := sessions.Default(ctx)
+	sess.Options(sessions.Options{
+		MaxAge: -1,
+	})
+	sess.Save()
+	ctx.String(http.StatusOK, "退出登陆成功")
 }
 
 func (u *UserHandler) Edit(ctx *gin.Context) {
