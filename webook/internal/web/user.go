@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"project-go/webook/internal/domain"
 	"project-go/webook/internal/service"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -143,12 +144,47 @@ func (u *UserHandler) Login(ctx *gin.Context) {
 	// 可以随便设置，放入session的值
 	sessionInfo.Set("userId", user.Id)
 	sessionInfo.Save()
-
 	ctx.String(http.StatusOK, "登陆成功")
 	return
 }
 
 func (u *UserHandler) Edit(ctx *gin.Context) {
+	type Req struct {
+		// 改邮箱 密码 或者能不能改手机号
+		Nickname string `json:"nickname"`
+		Birthday string `json:"birthday"`
+		AboutMe  string `json:"aboutMe"`
+	}
+
+	var req Req
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+
+	// 从session中获取登陆状态
+	sess := sessions.Default(ctx)
+
+	sessionId := sess.Get("userId")
+
+	// 进行数据操作
+	birthday, err := time.Parse(time.DateOnly, req.Birthday)
+	if err != nil {
+		ctx.String(http.StatusOK, "生日格式不对")
+		return
+	}
+
+	err = u.svc.UpdateNonSensitiveInfo(ctx, domain.User{
+		Id:       sessionId.(int64),
+		Nickname: req.Nickname,
+		Birthday: birthday,
+		AboutMe:  req.AboutMe,
+	})
+
+	if err != nil {
+		ctx.String(http.StatusOK, "系统异常")
+		return
+	}
+	ctx.String(http.StatusOK, "更新成功")
 
 }
 

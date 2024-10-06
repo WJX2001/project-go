@@ -39,9 +39,10 @@ func (svc *UserService) Login(ctx context.Context, u domain.User) (user domain.U
 	if err != nil {
 		return domain.User{}, ErrUserNotFound
 	}
-	return u, err
+	return findUser, nil
 }
 
+// 注册
 func (svc *UserService) SignUp(ctx context.Context, u domain.User) error {
 	// 考虑加密放在哪里的问题
 
@@ -54,4 +55,10 @@ func (svc *UserService) SignUp(ctx context.Context, u domain.User) error {
 
 	// 将数据存起来
 	return svc.repo.Create(ctx, u)
+}
+
+// 编辑信息
+func (svc *UserService) UpdateNonSensitiveInfo(ctx context.Context,
+	user domain.User) error {
+	return svc.repo.UpdateNonZeroFields(ctx, user)
 }

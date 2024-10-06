@@ -41,6 +41,22 @@ func (r *UserRepository) Create(ctx context.Context, u domain.User) error {
 	// 操作缓存
 }
 
+func (r *UserRepository) toEntity(u domain.User) dao.User {
+	return dao.User{
+		Id:       u.Id,
+		Email:    u.Email,
+		Password: u.Password,
+		Birthday: u.Birthday.UnixMilli(),
+		AboutMe:  u.AboutMe,
+		Nickname: u.Nickname,
+	}
+}
+
+// 更新操作
+func (r *UserRepository) UpdateNonZeroFields(ctx context.Context, u domain.User) error {
+	return r.dao.UpdateById(ctx, r.toEntity(u))
+}
+
 func (r *UserRepository) FindById(int64) {
 	// 先从 cache 里面找
 	// 再从 dao 里面找
