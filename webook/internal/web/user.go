@@ -152,7 +152,8 @@ func (u *UserHandler) LoginJWT(ctx *gin.Context) {
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 10)),
 		},
-		Uid: user.Id,
+		Uid:       user.Id,
+		UserAgent: ctx.Request.UserAgent(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -323,7 +324,8 @@ func (u *UserHandler) Profile(ctx *gin.Context) {
 type UserClaims struct {
 	jwt.RegisteredClaims
 	// 声明你自己的要放进去 token 里面的数据
-	Uid int64
+	Uid       int64
+	UserAgent string
 	// 自己随便添加 想要添加的属性
 	// 密码和权限等敏感数据 不要放在这里
 }

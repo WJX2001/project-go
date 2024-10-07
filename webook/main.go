@@ -1,7 +1,8 @@
 package main
 
 import (
-	"github.com/gin-contrib/sessions/redis"
+	"github.com/gin-contrib/sessions/memstore"
+	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"project-go/webook/internal/repository"
@@ -9,6 +10,7 @@ import (
 	"project-go/webook/internal/service"
 	user "project-go/webook/internal/web"
 	"project-go/webook/internal/web/middleware"
+	"project-go/webook/pkg/ginx/middlewares/ratelimit"
 	"strings"
 	"time"
 
@@ -28,9 +30,16 @@ func main() {
 
 func initWebServer() *gin.Engine {
 	server := gin.Default()
-
 	// 使用中间件
 	// 使用use 表明应用在server上的所有路由
+
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: "localhost:6379",
+	})
+
+	// 使用第三方插件 通过redis 实现限流
+	server.Use(ratelimit.NewBuilder(redisClient, time.Second, 100).Build())
+
 	server.Use(cors.New(cors.Config{
 		//AllowOrigins:  []string{"http://localhost:8000"},
 		AllowMethods: []string{"POST", "GET"},
@@ -56,26 +65,33 @@ func initWebServer() *gin.Engine {
 		同理也可换成 memStore 和 Redis
 	*/
 	//store := cookie.NewStore([]byte("secret"))
+	//store.Options(sessions.Options{
+	//	Secure:   true,  // 仅通过HTTPS传输Cookie
+	//	HttpOnly: true,  // 禁止JavaScript访问Cookie
+	//})
 
-	// 替换存储为redis
+	// TODO: 替换存储为redis
 	/**
 		第一个参数是最大空闲连接数量
 		第二个就是 tcp
 	    第三个，第四个就是连接信息和密码
 	    第五，第六就是两个key
 	*/
-	store, err := redis.NewStore(16, "tcp", "localhost:6379", "",
-		// authentication key, encryption key
-		/**
-			authentication: 是指身份认证
-		    encryption: 是指数据加密
-		    这两者再加上授权（权限控制），就是信息安全的三个核心概念
-		*/
-		[]byte("fdDxNKZ6hNsXe1Ax5GWjbSlTKNhxSmZU"),
-		[]byte("rcziTpeJ0dhwGKN6v3sHBCu92J0pmK9y"))
-	if err != nil {
-		panic(err)
-	}
+	//store, err := redis.NewStore(16, "tcp", "localhost:6379", "",
+	//	// authentication key, encryption key
+	//	/**
+	//		authentication: 是指身份认证
+	//	    encryption: 是指数据加密
+	//	    这两者再加上授权（权限控制），就是信息安全的三个核心概念
+	//	*/
+	//	[]byte("fdDxNKZ6hNsXe1Ax5GWjbSlTKNhxSmZU"),
+	//	[]byte("rcziTpeJ0dhwGKN6v3sHBCu92J0pmK9y"))
+	//if err != nil {
+	//	panic(err)
+	//}
+
+	// TODO: store替换成 memCache
+	store := memstore.NewStore([]byte("fdDxNKZ6hNsXe1Ax5GWjbSlTKNhxSmZU"), []byte("rcziTpeJ0dhwGKN6v3sHBCu92J0pmK9y"))
 	server.Use(sessions.Sessions("mysession", store))
 	// 步骤三
 
