@@ -42,7 +42,7 @@ func NewUserHandler(svc *service.UserService) *UserHandler {
 func (u *UserHandler) RegisterRoutesUser(server *gin.Engine) {
 	// 统一处理前缀
 	ug := server.Group("/user")
-	ug.GET("/profile", u.Profile)
+	ug.GET("/profile", u.ProfileByJWT)
 	ug.POST("/signup", u.SignUp)
 	ug.POST("/login", u.LoginJWT)
 	ug.POST("/edit", u.Edit)
@@ -148,6 +148,10 @@ func (u *UserHandler) LoginJWT(ctx *gin.Context) {
 	//token := jwt.New(jwt.SigningMethodHS512)
 
 	claims := UserClaims{
+		// 设置过期时间
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 10)),
+		},
 		Uid: user.Id,
 	}
 
@@ -250,13 +254,52 @@ func (u *UserHandler) Edit(ctx *gin.Context) {
 
 }
 
+func (u *UserHandler) ProfileByJWT(ctx *gin.Context) {
+	c, _ := ctx.Get("claims")
+	// 可以断定 必然有 claims
+	//if !ok {
+	//	// 可以考虑监控这里
+	//	ctx.String(http.StatusOK, "系统错误")
+	//	return
+	//}
+	//
+	// ok 代表是不是 *UserClaims
+	claims, ok := c.(*UserClaims)
+	if !ok {
+		ctx.String(http.StatusOK, "系统错误")
+		return
+	}
+	// 补充其他代码
+	userInfo, err := u.svc.FindById(ctx, claims.Uid)
+	if err != nil {
+		ctx.String(http.StatusOK, "系统异常")
+		return
+	}
+
+	type User struct {
+		Nickname string `json:"nickname"`
+		Email    string `json:"email"`
+		AboutMe  string `json:"aboutMe"`
+		Birthday string `json:"birthday"`
+	}
+	ctx.JSON(http.StatusOK, User{
+		Nickname: userInfo.Nickname,
+		Email:    userInfo.Email,
+		AboutMe:  userInfo.AboutMe,
+		Birthday: userInfo.Birthday.Format(time.DateOnly),
+	})
+
+}
+
 func (u *UserHandler) Profile(ctx *gin.Context) {
 
 	// 从session中获取登陆状态
 	sess := sessions.Default(ctx)
 	sessionId := sess.Get("userId").(int64)
-
 	userInfo, err := u.svc.FindById(ctx, sessionId)
+
+	// TODO: 通过JWT token中的UID获取用户信息
+
 	if err != nil {
 		ctx.String(http.StatusOK, "系统异常")
 		return
@@ -281,4 +324,6 @@ type UserClaims struct {
 	jwt.RegisteredClaims
 	// 声明你自己的要放进去 token 里面的数据
 	Uid int64
+	// 自己随便添加 想要添加的属性
+	// 密码和权限等敏感数据 不要放在这里
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/gob"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"log"
 	"net/http"
 	"project-go/webook/internal/web"
 	"strings"
@@ -75,5 +76,19 @@ func (l *LoginJWTMiddlewareBuilder) Build() gin.HandlerFunc {
 			return
 		}
 
+		now := time.Now()
+		// 每十秒钟刷新一次
+		if claims.ExpiresAt.Sub(now) < time.Second*50 {
+			claims.ExpiresAt = jwt.NewNumericDate(time.Now().Add(time.Minute))
+			tokenStr, err = token.SignedString([]byte("IjkxUQzY7dMQ4gdYLUMVvMXsIpl1E7f4"))
+
+			if err != nil {
+				// 记录日志
+				log.Println("jwt 续约失败", err)
+			}
+			ctx.Header("x-jwt-token", tokenStr)
+		}
+		// 将已经解析好的claims(自定义塞入的token信息)取出来
+		ctx.Set("claims", claims)
 	}
 }
