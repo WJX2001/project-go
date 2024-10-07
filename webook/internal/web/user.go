@@ -1,4 +1,4 @@
-package user
+package web
 
 import (
 	"fmt"
@@ -143,7 +143,15 @@ func (u *UserHandler) LoginJWT(ctx *gin.Context) {
 
 	// TODO: 在这里使用JWT登陆态
 	// 生成一个 JWT token
-	token := jwt.New(jwt.SigningMethodHS512)
+	// 后续要在JWT token里面带上个人数据
+	// 比如：userID
+	//token := jwt.New(jwt.SigningMethodHS512)
+
+	claims := UserClaims{
+		Uid: user.Id,
+	}
+
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenStr, err := token.SignedString([]byte("IjkxUQzY7dMQ4gdYLUMVvMXsIpl1E7f4"))
 	if err != nil {
 		ctx.String(http.StatusInternalServerError, "系统错误")
@@ -267,4 +275,10 @@ func (u *UserHandler) Profile(ctx *gin.Context) {
 		Birthday: userInfo.Birthday.Format(time.DateOnly),
 	})
 
+}
+
+type UserClaims struct {
+	jwt.RegisteredClaims
+	// 声明你自己的要放进去 token 里面的数据
+	Uid int64
 }

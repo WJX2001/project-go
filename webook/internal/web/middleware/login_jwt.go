@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"net/http"
+	"project-go/webook/internal/web"
 	"strings"
 	"time"
 )
@@ -48,9 +49,19 @@ func (l *LoginJWTMiddlewareBuilder) Build() gin.HandlerFunc {
 		}
 
 		tokenStr := segs[1]
-		token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		// 使用指针的原因
+		/**
+		因为ParseWithClaims 将会修改claims中的数据，如果不传入指针，相当于复制了一份，这并没有什么用处
+		ParseWithClaims 里面一定要传入指针
+		*/
+		claims := &web.UserClaims{}
+		//token, err := jwt.Parse(tokenStr, func(token *jwt.Token) (interface{}, error) {
+		//	return []byte("IjkxUQzY7dMQ4gdYLUMVvMXsIpl1E7f4"), nil
+		//})
+		token, err := jwt.ParseWithClaims(tokenStr, claims, func(token *jwt.Token) (interface{}, error) {
 			return []byte("IjkxUQzY7dMQ4gdYLUMVvMXsIpl1E7f4"), nil
 		})
+
 		if err != nil {
 			// 没登陆
 			ctx.AbortWithStatus(http.StatusUnauthorized)
@@ -58,7 +69,8 @@ func (l *LoginJWTMiddlewareBuilder) Build() gin.HandlerFunc {
 		}
 
 		// err 为 nil, token 不为nil
-		if token == nil || !token.Valid {
+		if token == nil || !token.Valid || claims.Uid == 0 {
+			// 没登陆
 			ctx.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
