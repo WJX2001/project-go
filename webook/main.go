@@ -34,7 +34,7 @@ func main() {
 		c.String(http.StatusOK, "hello world 你来了")
 	})
 
-	server.Run(":8080")
+	server.Run(":8082")
 }
 
 func initWebServer() *gin.Engine {

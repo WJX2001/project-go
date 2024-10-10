@@ -20,7 +20,7 @@ spec:
           image: flycash/webook:v0.0.1
           ports:
             # 对应server.run 的8080
-            - containerPort: 8080
+            - containerPort: 8082
 
 
 
