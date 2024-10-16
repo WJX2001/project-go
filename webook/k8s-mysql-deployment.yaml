@@ -1,26 +1,33 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: $title$
+  name: webook-live-mysql
   labels:
-    app: $title$
+    app: webook-live-mysql
 spec:
-  replicas: $1$
+  replicas: 1
   selector:
     matchLabels:
-      app: $title$
+      app: webook-live-mysql
   template:
     metadata:
-      name: $title$
+      name: webook-live-mysql
       labels:
-        app: $title$
+        app: webook-live-mysql
     spec:
       containers:
-        - name: $title$
-          image: $nginx$
+        - name: webook-live-mysql
+          image: mysql:8.0
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: root
           imagePullPolicy: IfNotPresent
+          volumeMounts:
+            - mountPath: /mysql
+              name: mysql-storage
           ports:
-            - containerPort: $80$
-              protocol: $TCP$
+            - containerPort: 3306
       restartPolicy: Always
-      $END$
+      volumes:
+        - name: mysql-storage
+      
