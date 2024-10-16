@@ -22,12 +22,19 @@ spec:
             - name: MYSQL_ROOT_PASSWORD
               value: root
           imagePullPolicy: IfNotPresent
+          # POD中有很多 volumes 要使用哪个
           volumeMounts:
-            - mountPath: /mysql
+             # 这边要对应到mysql的数据存储的位置
+             # 通过 MySql 的配置可以改这个目录
+            - mountPath: /var/lib/mysql
               name: mysql-storage
           ports:
             - containerPort: 3306
       restartPolicy: Always
+      # 整个 POD有哪些
       volumes:
         - name: mysql-storage
+          persistentVolumeClaim:
+            claimName: webook-mysql-live-claim
+
       

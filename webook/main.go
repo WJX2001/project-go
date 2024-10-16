@@ -5,7 +5,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"net/http"
+	"project-go/webook/config"
 	"project-go/webook/internal/repository"
 	"project-go/webook/internal/repository/dao"
 	"project-go/webook/internal/service"
@@ -22,19 +22,19 @@ import (
 
 func main() {
 	// 进行初始化
-	//db := initDB()
-	//server := initWebServer()
-	//u := initUser(db)
-	//u.RegisterRoutesUser(server)
-	//server.Run("localhost:8080")
+	db := initDB()
+	server := initWebServer()
+	u := initUser(db)
+	u.RegisterRoutesUser(server)
+	server.Run(":8082")
 
 	// K8S部署web服务器，首先去除其他依赖(Mysql和Redis的干扰)
-	server := gin.Default()
-	server.GET("/hello", func(c *gin.Context) {
-		c.String(http.StatusOK, "hello world 你来了")
-	})
-
-	server.Run(":8082")
+	//server := gin.Default()
+	//server.GET("/hello", func(c *gin.Context) {
+	//	c.String(http.StatusOK, "hello world 你来了")
+	//})
+	//
+	//server.Run(":8082")
 }
 
 func initWebServer() *gin.Engine {
@@ -43,7 +43,11 @@ func initWebServer() *gin.Engine {
 	// 使用use 表明应用在server上的所有路由
 
 	redisClient := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
+		//Addr: "localhost:6379",
+		// 这里需要连接到K8s部署的redis
+		//Addr: "webook-live-redis:11479",
+		// 直接使用配置文件中的
+		Addr: config.Config.Redis.Addr,
 	})
 
 	// 使用第三方插件 通过redis 实现限流
@@ -129,7 +133,11 @@ func initUser(db *gorm.DB) *user.UserHandler {
 
 func initDB() *gorm.DB {
 	// 进行初始化
-	db, err := gorm.Open(mysql.Open("root:root@tcp(localhost:13316)/webook"))
+	//db, err := gorm.Open(mysql.Open("root:root@tcp(localhost:13316)/webook"))
+	// 使用K8S 进行连接
+	// 对应 k8s-mysql-service中的port
+	//db, err := gorm.Open(mysql.Open("root:root@tcp(webook-live-mysql:11309)/webook"))
+	db, err := gorm.Open(mysql.Open(config.Config.DB.DSN))
 	if err != nil {
 		// 只会在初始化过程中 panic
 		// panic 相当于整个 goroutine 结束

@@ -1,0 +1,21 @@
+# pvc -> PersistentVolumeClaim
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  # 指mysql需要的配置
+  name: webook-mysql-live-claim
+  labels:
+    role: webook-mysql-live-claim
+spec:
+  # 可以自定义名称
+  storageClassName: manual-wjx
+  accessModes:
+    # 多个 POD 读写
+    #- ReadWriteMany
+    - ReadWriteOnce
+  resources:
+    requests:
+      # 1GB
+      storage: 1Gi
+
+
