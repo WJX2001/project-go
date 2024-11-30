@@ -5,6 +5,7 @@ import (
 	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"net/http"
 	"project-go/webook/config"
 	"project-go/webook/internal/repository"
 	"project-go/webook/internal/repository/dao"
@@ -30,9 +31,9 @@ func main() {
 
 	// K8S部署web服务器，首先去除其他依赖(Mysql和Redis的干扰)
 	//server := gin.Default()
-	//server.GET("/hello", func(c *gin.Context) {
-	//	c.String(http.StatusOK, "hello world 你来了")
-	//})
+	server.GET("/hello", func(c *gin.Context) {
+		c.String(http.StatusOK, "hello world 你来了")
+	})
 	//
 	//server.Run(":8082")
 }
