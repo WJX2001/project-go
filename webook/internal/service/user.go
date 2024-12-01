@@ -24,7 +24,7 @@ func NewUserService(repo *repository.UserRepository) *UserService {
 	}
 }
 
-// 登陆
+// Login 登陆
 func (svc *UserService) Login(ctx context.Context, u domain.User) (user domain.User, err error) {
 	// 先找用户
 	findUser, err := svc.repo.FindByEmail(ctx, u.Email)
@@ -42,7 +42,7 @@ func (svc *UserService) Login(ctx context.Context, u domain.User) (user domain.U
 	return findUser, nil
 }
 
-// 注册
+// SignUp 注册
 func (svc *UserService) SignUp(ctx context.Context, u domain.User) error {
 	// 考虑加密放在哪里的问题
 
@@ -57,14 +57,19 @@ func (svc *UserService) SignUp(ctx context.Context, u domain.User) error {
 	return svc.repo.Create(ctx, u)
 }
 
-// 编辑信息
+// UpdateNonSensitiveInfo 编辑信息
 func (svc *UserService) UpdateNonSensitiveInfo(ctx context.Context,
 	user domain.User) error {
 	return svc.repo.UpdateNonZeroFields(ctx, user)
 }
 
-// 查找信息
+// FindById 查找信息
 func (svc *UserService) FindById(ctx context.Context,
 	uid int64) (domain.User, error) {
 	return svc.repo.FindById(ctx, uid)
 }
+
+//func (svc *UserService) Profile(ctx context.Context, id int64) (domain.User, error) {
+//
+//	u, err := svc.repo.FindById(ctx, id)
+//}

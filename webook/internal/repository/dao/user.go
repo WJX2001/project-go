@@ -59,9 +59,9 @@ func (dao *UserDao) UpdateById(ctx context.Context, entity User) error {
 
 // 根据ID查找用户信息
 func (dao *UserDao) FindById(ctx context.Context, uid int64) (User, error) {
-	var res User
-	err := dao.db.WithContext(ctx).Where("id = ?", uid).First(&res).Error
-	return res, err
+	var u User
+	err := dao.db.WithContext(ctx).Where("id = ?", uid).First(&u).Error
+	return u, err
 }
 
 // 对标数据库

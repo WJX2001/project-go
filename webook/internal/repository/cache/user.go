@@ -9,6 +9,8 @@ import (
 	"time"
 )
 
+var ErrKeyNotExist = redis.Nil
+
 type UserCache struct {
 	// 传单机 Redis可以
 	// 传 cluster 的 Redis 也可以
@@ -27,9 +29,17 @@ func NewUserCache(client redis.Cmdable) *UserCache {
 	}
 }
 
-//func (cache *UserCache) GetUser(ctx context.Context, id int64) (domain.User, error) {
-//
-//}
+func (cache *UserCache) Get(ctx context.Context, id int64) (domain.User, error) {
+	key := cache.key(id)
+	val, err := cache.client.Get(ctx, key).Bytes()
+	if err != nil {
+		return domain.User{}, err
+	}
+	var u domain.User
+	// 这里会将val 填充到 &u中
+	err = json.Unmarshal(val, &u)
+	return u, err
+}
 
 func (cache *UserCache) Set(ctx context.Context, u domain.User) error {
 	// 把对象转换为json串
