@@ -4,13 +4,12 @@ import (
 	"fmt"
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"project-go/webook/internal/domain"
-	"project-go/webook/internal/service"
+	service "project-go/webook/internal/service"
 	"time"
-
-	"github.com/gin-gonic/gin"
 )
 
 // UserHandler 在此定义跟 user有关的路由

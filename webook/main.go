@@ -5,9 +5,9 @@ import (
 	"github.com/redis/go-redis/v9"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	"net/http"
 	"project-go/webook/config"
 	"project-go/webook/internal/repository"
+	"project-go/webook/internal/repository/cache"
 	"project-go/webook/internal/repository/dao"
 	"project-go/webook/internal/service"
 	user "project-go/webook/internal/web"
@@ -24,17 +24,20 @@ import (
 func main() {
 	// 进行初始化
 	db := initDB()
+	redisClient := redis.NewClient(&redis.Options{
+		Addr: config.Config.Redis.Addr,
+	})
 	server := initWebServer()
-	u := initUser(db)
+	u := initUser(db, redisClient)
 	u.RegisterRoutesUser(server)
 	server.Run(":8082")
 
 	// K8S部署web服务器，首先去除其他依赖(Mysql和Redis的干扰)
 	//server := gin.Default()
-	server.GET("/hello", func(c *gin.Context) {
-		c.String(http.StatusOK, "hello world 你来了")
-	})
-	//
+	//server.GET("/hello", func(c *gin.Context) {
+	//	c.String(http.StatusOK, "hello world 你来了")
+	//})
+	////
 	//server.Run(":8082")
 }
 
@@ -124,9 +127,10 @@ func initWebServer() *gin.Engine {
 	return server
 }
 
-func initUser(db *gorm.DB) *user.UserHandler {
+func initUser(db *gorm.DB, redisClient redis.Cmdable) *user.UserHandler {
 	ud := dao.NewUserDAO(db)
-	repo := repository.NewUserRepository(ud)
+	uc := cache.NewUserCache(redisClient)
+	repo := repository.NewUserRepository(ud, uc)
 	svc := service.NewUserService(repo)
 	u := user.NewUserHandler(svc)
 	return u
