@@ -43,11 +43,12 @@ func (svc *CodeService) generateCode() string {
 	return fmt.Sprintf("%6d", num)
 }
 
-//func (svc *CodeService) Verify(ctx context.Context, biz string,
-//	phone string, inputCode string,
-//) (bool, error) {
-//
-//}
+func (svc *CodeService) Verify(ctx context.Context, biz string,
+	phone string, inputCode string,
+) (bool, error) {
+	return svc.repo.Verify(ctx, biz, phone, inputCode)
+}
+
 //
 //func (svc *CodeService) VerifyV1(ctx context.Context, biz string,
 //	phone string, inputCode string,

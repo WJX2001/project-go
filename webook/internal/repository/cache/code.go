@@ -9,11 +9,17 @@ import (
 )
 
 var (
-	// 编译器会在编译的时候，把set_code的代码 放进来这个 luaSetCode 变量里
-	//go:embed lua/set_code.lua
-	luaSetCode         string
-	ErrCodeSendTooMany = errors.New("发送太频繁")
+	ErrCodeSendTooMany   = errors.New("发送太频繁")
+	ErrCodeVerifyTooMany = errors.New("验证次数太频繁")
 )
+
+// 编译器会在编译的时候，把set_code的代码 放进来这个 luaSetCode 变量里
+//
+//go:embed lua/set_code.lua
+var luaSetCode string
+
+//go:embed lua/verify_code.lua
+var luaVerifyCode string
 
 type CodeCache struct {
 	client redis.Cmdable
@@ -39,6 +45,24 @@ func (c *CodeCache) Set(ctx context.Context, biz, phone string, code string) err
 		return errors.New("验证码存在，但是没有过期时间")
 	default:
 		return nil
+	}
+}
+
+func (c *CodeCache) Verify(ctx context.Context, biz, phone, inputCode string) (bool, error) {
+	res, err := c.client.Eval(ctx, luaVerifyCode, []string{c.key(biz, phone)}, inputCode).Int()
+	if err != nil {
+		return false, err
+	}
+	switch res {
+	case 0:
+		return true, nil
+	case -1:
+		// 这里需要告警 恶意行为
+		return false, ErrCodeVerifyTooMany
+	case -2:
+		return false, nil
+	default:
+		return true, nil
 	}
 }
 
