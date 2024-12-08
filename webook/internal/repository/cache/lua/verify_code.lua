@@ -15,7 +15,7 @@ if code == expectedCode then
     redis.call("set", cntKey, 0)
     return 0
 else
-    redis.call("decr",  )
+    redis.call("decr", cntKey)
     -- 不相等，用户输错了
     return -2
 end
