@@ -10,6 +10,7 @@ import (
 	"project-go/webook/internal/repository/cache"
 	"project-go/webook/internal/repository/dao"
 	"project-go/webook/internal/service"
+	"project-go/webook/internal/service/sms/memory"
 	user "project-go/webook/internal/web"
 	"project-go/webook/internal/web/middleware"
 	"project-go/webook/pkg/ginx/middlewares/ratelimit"
@@ -115,6 +116,8 @@ func initWebServer() *gin.Engine {
 	// Session 的中间件
 	//server.Use(middleware.NewLoginMiddlewareBuilder().
 	//	IgnorePaths("/user/signup").
+	//	IgnorePaths("/user/login_sms/code/send").
+	//	IgnorePaths("/user/login_sms").
 	//	IgnorePaths("/user/login").
 	//	Build())
 
@@ -122,17 +125,23 @@ func initWebServer() *gin.Engine {
 	server.Use(middleware.NewLoginJWTMiddlewareBuilder().
 		JWTIgnorePaths("/user/signup").
 		JWTIgnorePaths("/user/login").
+		JWTIgnorePaths("/user/login_sms").
+		JWTIgnorePaths("/user/login_sms/code/send").
 		Build())
 
 	return server
 }
 
-func initUser(db *gorm.DB, redisClient redis.Cmdable) *user.UserHandler {
+func initUser(db *gorm.DB, rdb redis.Cmdable) *user.UserHandler {
 	ud := dao.NewUserDAO(db)
-	uc := cache.NewUserCache(redisClient)
+	uc := cache.NewUserCache(rdb)
 	repo := repository.NewUserRepository(ud, uc)
 	svc := service.NewUserService(repo)
-	u := user.NewUserHandler(svc)
+	codeCache := cache.NewCodeCache(rdb)
+	codeRepo := repository.NewCodeRepository(codeCache)
+	smsSvc := memory.NewService()
+	codeSvc := service.NewCodeService(codeRepo, smsSvc)
+	u := user.NewUserHandler(svc, codeSvc)
 	return u
 }
 

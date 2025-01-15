@@ -15,12 +15,13 @@ import (
 // UserHandler 在此定义跟 user有关的路由
 type UserHandler struct {
 	svc         *service.UserService
+	codeSvc     *service.CodeService
 	emailExp    *regexp.Regexp
 	passwordExp *regexp.Regexp
 }
 
 // 不需要每次都编译，只需要暴露方法 进行预编译
-func NewUserHandler(svc *service.UserService) *UserHandler {
+func NewUserHandler(svc *service.UserService, codeSvc *service.CodeService) *UserHandler {
 	// 定义正则表达式
 	const (
 		emailRegexPattern    = `^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`
@@ -34,6 +35,7 @@ func NewUserHandler(svc *service.UserService) *UserHandler {
 		svc:         svc,
 		emailExp:    emailExp,
 		passwordExp: passwordExp,
+		codeSvc:     codeSvc,
 	}
 }
 
@@ -46,6 +48,37 @@ func (u *UserHandler) RegisterRoutesUser(server *gin.Engine) {
 	ug.POST("/login", u.LoginJWT)
 	ug.POST("/edit", u.Edit)
 	ug.GET("/logout", u.Logout)
+	ug.POST("/login_sms/code/send", u.SendLoginSMSCode)
+	ug.POST("/login_sms", u.LoginSMS)
+}
+
+func (u *UserHandler) LoginSMS(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, "你好")
+	return
+}
+
+func (u *UserHandler) SendLoginSMSCode(ctx *gin.Context) {
+	type Req struct {
+		Phone string `json:"phone"`
+	}
+	const biz = "login"
+	var req Req
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+	err := u.codeSvc.Send(ctx, biz, req.Phone)
+	if err != nil {
+		//ctx.JSON(http.StatusOK, "系统异常")
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  "系统错误",
+		})
+		return
+	}
+	//ctx.JSON(http.StatusOK, "发送成功")
+	ctx.JSON(http.StatusOK, Result{
+		Msg: "发送成功",
+	})
 }
 
 // 注册
