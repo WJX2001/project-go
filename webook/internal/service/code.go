@@ -15,6 +15,11 @@ type CodeService struct {
 
 const codeTplId = "1877556"
 
+var (
+	ErrCodeVerifyTooManyTimes = repository.ErrCodeVerifyTooMany
+	ErrCodeSendTooMany        = repository.ErrCodeSendTooMany
+)
+
 func NewCodeService(repo *repository.CodeRepository, smsSvc sms.Service) *CodeService {
 	return &CodeService{
 		repo:   repo,
@@ -46,7 +51,7 @@ func (svc *CodeService) generateCode() string {
 	// 六位数 num 在 0, 999999 之间， 闭区间
 	num := rand.Intn(1000000)
 	// 不够六位的，加上前导0
-	return fmt.Sprintf("%6d", num)
+	return fmt.Sprintf("%06d", num)
 }
 
 func (svc *CodeService) Verify(ctx context.Context, biz string,

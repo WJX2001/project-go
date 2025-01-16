@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+const biz = "login"
+
 // UserHandler 在此定义跟 user有关的路由
 type UserHandler struct {
 	svc         *service.UserService
@@ -53,32 +55,103 @@ func (u *UserHandler) RegisterRoutesUser(server *gin.Engine) {
 }
 
 func (u *UserHandler) LoginSMS(ctx *gin.Context) {
-	ctx.JSON(http.StatusOK, "你好")
-	return
-}
-
-func (u *UserHandler) SendLoginSMSCode(ctx *gin.Context) {
 	type Req struct {
 		Phone string `json:"phone"`
+		Code  string `json:"code"`
 	}
-	const biz = "login"
 	var req Req
 	if err := ctx.Bind(&req); err != nil {
 		return
 	}
-	err := u.codeSvc.Send(ctx, biz, req.Phone)
+
+	// 这里也可以加上各种校验
+	ok, err := u.codeSvc.Verify(ctx, biz, req.Phone, req.Code)
 	if err != nil {
-		//ctx.JSON(http.StatusOK, "系统异常")
 		ctx.JSON(http.StatusOK, Result{
 			Code: 5,
 			Msg:  "系统错误",
 		})
 		return
 	}
-	//ctx.JSON(http.StatusOK, "发送成功")
+
+	if !ok {
+		ctx.JSON(http.StatusOK, Result{
+			Code: 4,
+			Msg:  "验证码错误",
+		})
+		return
+	}
+
+	user, err := u.svc.FindOrCreate(ctx, req.Phone)
+	if err != nil {
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  "系统错误",
+		})
+		return
+	}
+
+	// 这边要怎么办？
+	if err = u.setJWTTOKEN(ctx, user.Id); err != nil {
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  "系统错误",
+		})
+		return
+	}
+
 	ctx.JSON(http.StatusOK, Result{
-		Msg: "发送成功",
+		Code: 4,
+		Msg:  "验证码校验通过",
 	})
+}
+
+func (u *UserHandler) SendLoginSMSCode(ctx *gin.Context) {
+	type Req struct {
+		Phone string `json:"phone"`
+	}
+
+	var req Req
+	if err := ctx.Bind(&req); err != nil {
+		return
+	}
+
+	// 是不是一个合法的手机号码
+	// 考虑用正则表达式去校验
+	if req.Phone == "" {
+		ctx.JSON(http.StatusOK, Result{
+			Code: 4,
+			Msg:  "输入有误",
+		})
+		return
+	}
+	err := u.codeSvc.Send(ctx, biz, req.Phone)
+	switch err {
+	case nil:
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "发送成功",
+		})
+	case service.ErrCodeSendTooMany:
+		ctx.JSON(http.StatusOK, Result{
+			Msg: "发送太频繁，请稍后再试",
+		})
+	default:
+		ctx.JSON(http.StatusOK, Result{
+			Code: 5,
+			Msg:  "系统错误",
+		})
+	}
+	//if err != nil {
+	//	//ctx.JSON(http.StatusOK, "系统异常")
+	//	ctx.JSON(http.StatusOK, Result{
+	//		Code: 5,
+	//		Msg:  "系统错误",
+	//	})
+	//	return
+	//}
+	//ctx.JSON(http.StatusOK, Result{
+	//	Msg: "发送成功",
+	//})
 }
 
 // 注册
@@ -179,27 +252,36 @@ func (u *UserHandler) LoginJWT(ctx *gin.Context) {
 	// 比如：userID
 	//token := jwt.New(jwt.SigningMethodHS512)
 
+	//if done {
+	//	return
+	//}
+	if err := u.setJWTTOKEN(ctx, user.Id); err != nil {
+		ctx.JSON(http.StatusOK, "系统错误")
+		return
+	}
+	fmt.Println(user)
+	ctx.String(http.StatusOK, "登陆成功")
+	return
+}
+
+func (u *UserHandler) setJWTTOKEN(ctx *gin.Context, uid int64) error {
 	claims := UserClaims{
 		// 设置过期时间
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 10)),
 		},
-		Uid:       user.Id,
+		Uid:       uid,
 		UserAgent: ctx.Request.UserAgent(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenStr, err := token.SignedString([]byte("IjkxUQzY7dMQ4gdYLUMVvMXsIpl1E7f4"))
 	if err != nil {
-		ctx.String(http.StatusInternalServerError, "系统错误")
-		return
+		return err
 	}
 	// 将token 放到header中
 	ctx.Header("x-jwt-token", tokenStr)
-	fmt.Println(tokenStr)
-	fmt.Println(user)
-	ctx.String(http.StatusOK, "登陆成功")
-	return
+	return nil
 }
 
 func (u *UserHandler) Login(ctx *gin.Context) {
