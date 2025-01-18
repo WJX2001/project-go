@@ -14,6 +14,9 @@ import (
 
 const biz = "login"
 
+// 确保 UserHandler上实现了 handler接口
+//var _ handler = (*UserHandler)(nil)
+
 // UserHandler 在此定义跟 user有关的路由
 type UserHandler struct {
 	svc         *service.UserService

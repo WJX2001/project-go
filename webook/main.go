@@ -3,15 +3,7 @@ package main
 import (
 	"github.com/gin-contrib/sessions/memstore"
 	"github.com/redis/go-redis/v9"
-	"gorm.io/driver/mysql"
-	"gorm.io/gorm"
 	"project-go/webook/config"
-	"project-go/webook/internal/repository"
-	"project-go/webook/internal/repository/cache"
-	"project-go/webook/internal/repository/dao"
-	"project-go/webook/internal/service"
-	"project-go/webook/internal/service/sms/memory"
-	user "project-go/webook/internal/web"
 	"project-go/webook/internal/web/middleware"
 	"project-go/webook/pkg/ginx/middlewares/ratelimit"
 	"strings"
@@ -24,13 +16,12 @@ import (
 
 func main() {
 	// 进行初始化
-	db := initDB()
-	redisClient := redis.NewClient(&redis.Options{
-		Addr: config.Config.Redis.Addr,
-	})
-	server := initWebServer()
-	u := initUser(db, redisClient)
-	u.RegisterRoutesUser(server)
+	//server := initWebServer()
+	//u := initUser(db, redisClient)
+	//u.RegisterRoutesUser(server)
+	// TODO: 使用 wire进行改造
+	server := InitWebServer()
+
 	server.Run(":8082")
 
 	// K8S部署web服务器，首先去除其他依赖(Mysql和Redis的干扰)
@@ -132,37 +123,15 @@ func initWebServer() *gin.Engine {
 	return server
 }
 
-func initUser(db *gorm.DB, rdb redis.Cmdable) *user.UserHandler {
-	ud := dao.NewUserDAO(db)
-	uc := cache.NewUserCache(rdb)
-	repo := repository.NewUserRepository(ud, uc)
-	svc := service.NewUserService(repo)
-	codeCache := cache.NewCodeCache(rdb)
-	codeRepo := repository.NewCodeRepository(codeCache)
-	smsSvc := memory.NewService()
-	codeSvc := service.NewCodeService(codeRepo, smsSvc)
-	u := user.NewUserHandler(svc, codeSvc)
-	return u
-}
-
-func initDB() *gorm.DB {
-	// 进行初始化
-	//db, err := gorm.Open(mysql.Open("root:root@tcp(localhost:13316)/webook"))
-	// 使用K8S 进行连接
-	// 对应 k8s-mysql-service中的port
-	//db, err := gorm.Open(mysql.Open("root:root@tcp(webook-live-mysql:11309)/webook"))
-	db, err := gorm.Open(mysql.Open(config.Config.DB.DSN))
-	if err != nil {
-		// 只会在初始化过程中 panic
-		// panic 相当于整个 goroutine 结束
-		// 一旦初始化过程出错，应用就不要启动了
-		panic(err)
-	}
-
-	err = dao.InitTable(db)
-	if err != nil {
-		panic(err)
-	}
-
-	return db
-}
+//func initUser(db *gorm.DB, rdb redis.Cmdable) *user.UserHandler {
+//	ud := dao.NewUserDAO(db)
+//	uc := cache.NewUserCache(rdb)
+//	repo := repository.NewUserRepository(ud, uc)
+//	svc := service.NewUserService(repo)
+//	codeCache := cache.NewCodeCache(rdb)
+//	codeRepo := repository.NewCodeRepository(codeCache)
+//	smsSvc := memory.NewService()
+//	codeSvc := service.NewCodeService(codeRepo, smsSvc)
+//	u := user.NewUserHandler(svc, codeSvc)
+//	return u
+//}
