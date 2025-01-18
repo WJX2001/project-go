@@ -5,8 +5,12 @@ import (
 	"project-go/webook/internal/repository/cache"
 )
 
-type CodeRepository struct {
-	cache *cache.CodeCache
+type CodeRepository interface {
+	Store(ctx context.Context, biz string, phone string, code string) error
+	Verify(ctx context.Context, biz string, phone string, code string) (bool, error)
+}
+type CacheCodeRepository struct {
+	cache cache.CodeCache
 }
 
 var (
@@ -14,14 +18,14 @@ var (
 	ErrCodeVerifyTooMany = cache.ErrCodeVerifyTooMany
 )
 
-func NewCodeRepository(c *cache.CodeCache) *CodeRepository {
-	return &CodeRepository{cache: c}
+func NewCodeRepository(c cache.CodeCache) CodeRepository {
+	return &CacheCodeRepository{cache: c}
 }
 
-func (repo *CodeRepository) Store(ctx context.Context, biz string, phone string, code string) error {
+func (repo *CacheCodeRepository) Store(ctx context.Context, biz string, phone string, code string) error {
 	return repo.cache.Set(ctx, biz, phone, code)
 }
 
-func (repo *CodeRepository) Verify(ctx context.Context, biz string, phone string, code string) (bool, error) {
+func (repo *CacheCodeRepository) Verify(ctx context.Context, biz string, phone string, code string) (bool, error) {
 	return repo.cache.Verify(ctx, biz, phone, code)
 }

@@ -14,29 +14,44 @@ var (
 	ErrUserNotFound  = gorm.ErrRecordNotFound
 )
 
-type UserDao struct {
+type UserDAO interface {
+	FindByEmail(ctx context.Context, email string) (User, error)
+	FindById(ctx context.Context, uid int64) (User, error)
+	FindByPhone(ctx context.Context, phone string) (User, error)
+	Insert(ctx context.Context, u User) error
+	UpdateById(ctx context.Context, entity User) error
+}
+
+type GORMUserDao struct {
 	db *gorm.DB
 }
 
-func NewUserDAO(db *gorm.DB) *UserDao {
-	return &UserDao{
+func NewUserDAO(db *gorm.DB) UserDAO {
+	return &GORMUserDao{
 		db: db,
 	}
 }
 
-func (dao *UserDao) FindByEmail(ctx context.Context, email string) (User, error) {
+func (dao *GORMUserDao) FindByEmail(ctx context.Context, email string) (User, error) {
 	var u User
 	err := dao.db.WithContext(ctx).Where("email = ?", email).First(&u).Error
 	return u, err
 }
 
-func (dao *UserDao) FindByPhone(ctx context.Context, phone string) (User, error) {
+func (dao *GORMUserDao) FindByPhone(ctx context.Context, phone string) (User, error) {
 	var u User
 	err := dao.db.WithContext(ctx).Where("phone = ?", phone).First(&u).Error
 	return u, err
 }
 
-func (dao *UserDao) Insert(ctx context.Context, u User) error {
+// 根据ID查找用户信息
+func (dao *GORMUserDao) FindById(ctx context.Context, uid int64) (User, error) {
+	var u User
+	err := dao.db.WithContext(ctx).Where("id = ?", uid).First(&u).Error
+	return u, err
+}
+
+func (dao *GORMUserDao) Insert(ctx context.Context, u User) error {
 	// 存储毫秒数
 	now := time.Now().UnixMilli()
 	u.Utime = now
@@ -52,7 +67,7 @@ func (dao *UserDao) Insert(ctx context.Context, u User) error {
 	return err
 }
 
-func (dao *UserDao) UpdateById(ctx context.Context, entity User) error {
+func (dao *GORMUserDao) UpdateById(ctx context.Context, entity User) error {
 	// 这种写法依赖于 GORM 的零值和主键更新特性
 	// Update 非零值 WHERE id = ?
 	return dao.db.WithContext(ctx).Model(&entity).Where("id = ?", entity.Id).
@@ -62,13 +77,6 @@ func (dao *UserDao) UpdateById(ctx context.Context, entity User) error {
 			"birthday": entity.Birthday,
 			"about_me": entity.AboutMe,
 		}).Error
-}
-
-// 根据ID查找用户信息
-func (dao *UserDao) FindById(ctx context.Context, uid int64) (User, error) {
-	var u User
-	err := dao.db.WithContext(ctx).Where("id = ?", uid).First(&u).Error
-	return u, err
 }
 
 // 对标数据库

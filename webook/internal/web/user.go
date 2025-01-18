@@ -19,14 +19,14 @@ const biz = "login"
 
 // UserHandler 在此定义跟 user有关的路由
 type UserHandler struct {
-	svc         *service.UserService
-	codeSvc     *service.CodeService
+	svc         service.UserServiceInterface
+	codeSvc     service.CodeServiceInterface
 	emailExp    *regexp.Regexp
 	passwordExp *regexp.Regexp
 }
 
 // 不需要每次都编译，只需要暴露方法 进行预编译
-func NewUserHandler(svc *service.UserService, codeSvc *service.CodeService) *UserHandler {
+func NewUserHandler(svc service.UserServiceInterface, codeSvc service.CodeServiceInterface) *UserHandler {
 	// 定义正则表达式
 	const (
 		emailRegexPattern    = `^[a-z0-9._%+\-]+@[a-z0-9.\-]+\.[a-z]{2,4}$`

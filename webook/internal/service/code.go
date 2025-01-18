@@ -8,8 +8,20 @@ import (
 	"project-go/webook/internal/service/sms"
 )
 
+type CodeServiceInterface interface {
+	Send(ctx context.Context,
+		// 区别业务场景
+		biz string,
+		phone string,
+	) error
+
+	Verify(ctx context.Context, biz string,
+		phone string, inputCode string,
+	) (bool, error)
+}
+
 type CodeService struct {
-	repo   *repository.CodeRepository
+	repo   repository.CodeRepository
 	smsSvc sms.Service
 }
 
@@ -20,7 +32,7 @@ var (
 	ErrCodeSendTooMany        = repository.ErrCodeSendTooMany
 )
 
-func NewCodeService(repo *repository.CodeRepository, smsSvc sms.Service) *CodeService {
+func NewCodeService(repo repository.CodeRepository, smsSvc sms.Service) CodeServiceInterface {
 	return &CodeService{
 		repo:   repo,
 		smsSvc: smsSvc,
