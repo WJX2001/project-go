@@ -413,8 +413,9 @@ func (u *UserHandler) Profile(ctx *gin.Context) {
 
 	// 从session中获取登陆状态
 	sess := sessions.Default(ctx)
-	sessionId := sess.Get("userId").(int64)
-	userInfo, err := u.svc.FindById(ctx, sessionId)
+	id := sess.Get("userId").(int64)
+	//userInfo, err := u.svc.FindById(ctx, sessionId)
+	userInfo, err := u.svc.Profile(ctx, id)
 
 	// TODO: 通过JWT token中的UID获取用户信息
 
