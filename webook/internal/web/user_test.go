@@ -216,4 +216,5 @@ func TestUserHandler_SignUp1(t *testing.T) {
 			assert.Equal(t, tc.wantBody, resp.Body.String())
 		})
 	}
+
 }
