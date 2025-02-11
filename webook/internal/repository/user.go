@@ -126,14 +126,19 @@ func (r *CachedUserRepository) FindById(ctx context.Context, uid int64) (domain.
 	//}
 	u = r.entityToDomain(ue)
 
-	go func() {
-		err = r.cache.Set(ctx, u)
-		if err != nil {
-			// 打日志 做监控
-		}
-	}()
+	_ = r.cache.Set(ctx, u)
+	//go func() {
+	//	err = r.cache.Set(ctx, u)
+	//	if err != nil {
+	//		// 打日志 做监控
+	//	}
+	//}()
 
-	return u, err
+	// TODO: 如果改成异步的 如何写单元测试 使用sleep
+	//go func() {
+	//	_ = r.cache.Set(ctx, u)
+	//}()
+	return u, nil
 }
 
 func (r *CachedUserRepository) domainToEntity(u domain.User) dao.User {

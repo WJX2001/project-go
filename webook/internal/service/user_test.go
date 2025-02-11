@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/mock/gomock"
 	"golang.org/x/crypto/bcrypt"
@@ -61,6 +62,36 @@ func Test_userService_Login(t *testing.T) {
 			email:    "123@qq.com",
 			password: "hello#world123",
 
+			wantUser: domain.User{},
+			wantErr:  ErrInvalidUserOrPassword,
+		},
+		{
+			name: "DB错误",
+			mock: func(ctrl *gomock.Controller) repository.UserRepository {
+				repo := repomocks.NewMockUserRepository(ctrl)
+				repo.EXPECT().FindByEmail(gomock.Any(), "123@qq.com").Return(domain.User{}, errors.New("mock db 错误"))
+				return repo
+			},
+			email:    "123@qq.com",
+			password: "hello#world123",
+
+			wantUser: domain.User{},
+			wantErr:  errors.New("mock db 错误"),
+		},
+		{
+			name: "密码不对", // 用户名和密码是对的
+			mock: func(ctrl *gomock.Controller) repository.UserRepository {
+				repo := repomocks.NewMockUserRepository(ctrl)
+				repo.EXPECT().FindByEmail(gomock.Any(), "123@qq.com").Return(domain.User{
+					Email:    "123@qq.com",
+					Phone:    "13623231234",
+					Password: "$2a$10$tc/oBMcdQIIe3OPotKYeE.sfkLCzbvYTwz4Fg7h2Mh8jbTGVU4wE.",
+					Ctime:    now,
+				}, nil)
+				return repo
+			},
+			email:    "123@qq.com",
+			password: "hello#world123",
 			wantUser: domain.User{},
 			wantErr:  ErrInvalidUserOrPassword,
 		},
