@@ -209,6 +209,9 @@ func TestUserHandler_SignUp1(t *testing.T) {
 			require.NoError(t, err)
 			req.Header.Set("Content-Type", "application/json")
 			resp := httptest.NewRecorder()
+			server.Use(func(c *gin.Context) {
+				c.Set("user", UserClaims{})
+			})
 			t.Log(resp)
 			server.ServeHTTP(resp, req)
 

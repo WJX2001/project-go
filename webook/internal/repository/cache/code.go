@@ -49,6 +49,9 @@ func (c *RedisCodeCache) Set(ctx context.Context, biz, phone string, code string
 		return err
 	}
 	switch res {
+	case 0:
+		// 毫无问题
+		return ErrCodeSendTooMany
 	case -1:
 		// 发送太频繁
 		return ErrCodeSendTooMany
@@ -56,7 +59,8 @@ func (c *RedisCodeCache) Set(ctx context.Context, biz, phone string, code string
 		// 系统错误
 		return errors.New("验证码存在，但是没有过期时间")
 	default:
-		return nil
+		// 系统错误
+		return errors.New("系统错误")
 	}
 }
 
