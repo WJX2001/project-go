@@ -51,4 +51,5 @@ func (t *TimeoutFailOverSMSService) Send(ctx context.Context, tpl string, args [
 		// - 非超时 我直接下一个
 		return err
 	}
+	return nil
 }
