@@ -5,7 +5,6 @@ import (
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt/v5"
 	"net/http"
 	"project-go/webook/internal/domain"
 	service "project-go/webook/internal/service"
@@ -23,6 +22,7 @@ type UserHandler struct {
 	codeSvc     service.CodeServiceInterface
 	emailExp    *regexp.Regexp
 	passwordExp *regexp.Regexp
+	jwtHandler
 }
 
 // 不需要每次都编译，只需要暴露方法 进行预编译
@@ -95,7 +95,7 @@ func (u *UserHandler) LoginSMS(ctx *gin.Context) {
 	}
 
 	// 这边要怎么办？
-	if err = u.setJWTTOKEN(ctx, user.Id); err != nil {
+	if err = u.setJWTToken(ctx, user.Id); err != nil {
 		ctx.JSON(http.StatusOK, Result{
 			Code: 5,
 			Msg:  "系统错误",
@@ -258,7 +258,7 @@ func (u *UserHandler) LoginJWT(ctx *gin.Context) {
 	//if done {
 	//	return
 	//}
-	if err := u.setJWTTOKEN(ctx, user.Id); err != nil {
+	if err := u.setJWTToken(ctx, user.Id); err != nil {
 		ctx.JSON(http.StatusOK, "系统错误")
 		return
 	}
@@ -267,25 +267,25 @@ func (u *UserHandler) LoginJWT(ctx *gin.Context) {
 	return
 }
 
-func (u *UserHandler) setJWTTOKEN(ctx *gin.Context, uid int64) error {
-	claims := UserClaims{
-		// 设置过期时间
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 10)),
-		},
-		Uid:       uid,
-		UserAgent: ctx.Request.UserAgent(),
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenStr, err := token.SignedString([]byte("IjkxUQzY7dMQ4gdYLUMVvMXsIpl1E7f4"))
-	if err != nil {
-		return err
-	}
-	// 将token 放到header中
-	ctx.Header("x-jwt-token", tokenStr)
-	return nil
-}
+//func (u *UserHandler) setJWTTOKEN(ctx *gin.Context, uid int64) error {
+//	claims := UserClaims{
+//		// 设置过期时间
+//		RegisteredClaims: jwt.RegisteredClaims{
+//			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 10)),
+//		},
+//		Uid:       uid,
+//		UserAgent: ctx.Request.UserAgent(),
+//	}
+//
+//	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+//	tokenStr, err := token.SignedString([]byte("IjkxUQzY7dMQ4gdYLUMVvMXsIpl1E7f4"))
+//	if err != nil {
+//		return err
+//	}
+//	// 将token 放到header中
+//	ctx.Header("x-jwt-token", tokenStr)
+//	return nil
+//}
 
 func (u *UserHandler) Login(ctx *gin.Context) {
 	type LoginReq struct {
@@ -439,11 +439,11 @@ func (u *UserHandler) Profile(ctx *gin.Context) {
 
 }
 
-type UserClaims struct {
-	jwt.RegisteredClaims
-	// 声明你自己的要放进去 token 里面的数据
-	Uid       int64
-	UserAgent string
-	// 自己随便添加 想要添加的属性
-	// 密码和权限等敏感数据 不要放在这里
-}
+//type UserClaims struct {
+//	jwt.RegisteredClaims
+//	// 声明你自己的要放进去 token 里面的数据
+//	Uid       int64
+//	UserAgent string
+//	// 自己随便添加 想要添加的属性
+//	// 密码和权限等敏感数据 不要放在这里
+//}

@@ -14,4 +14,6 @@ type User struct {
 	Birthday time.Time
 	AboutMe  string
 	Ctime    time.Time
+	// 不要组合 万一将来可能有其他同名字段
+	WechatInfo WechatInfo
 }

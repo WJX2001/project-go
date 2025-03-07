@@ -20,6 +20,7 @@ type UserDAO interface {
 	FindByPhone(ctx context.Context, phone string) (User, error)
 	Insert(ctx context.Context, u User) error
 	UpdateById(ctx context.Context, entity User) error
+	FindByWechat(ctx context.Context, openID string) (User, error)
 }
 
 type GORMUserDao struct {
@@ -30,6 +31,12 @@ func NewUserDAO(db *gorm.DB) UserDAO {
 	return &GORMUserDao{
 		db: db,
 	}
+}
+
+func (dao *GORMUserDao) FindByWechat(ctx context.Context, openID string) (User, error) {
+	var u User
+	err := dao.db.WithContext(ctx).Where("wechat_open_id = ?", openID).First(&u).Error
+	return u, err
 }
 
 func (dao *GORMUserDao) FindByEmail(ctx context.Context, email string) (User, error) {
@@ -94,6 +101,12 @@ type User struct {
 	Nickname string         `gorm:"type=varchar(128)"`
 	Birthday int64
 	AboutMe  string `gorm:"type=varchar(4096)"`
+
+	// 如果要创建联合索引 <unionid, openid> 用 openid 查询的时候不会走索引
+	// <openid, unionid> 用 unionid 查询的时候，不会走索引
+	// 微信的字段
+	WechatUnionID sql.NullString `gorm:"unique"`
+	WechatOpenID  sql.NullString `gorm:"unique"`
 
 	// 创建时间 毫秒数
 	Ctime int64

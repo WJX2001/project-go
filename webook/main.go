@@ -2,10 +2,7 @@ package main
 
 import (
 	"github.com/gin-contrib/sessions/memstore"
-	"github.com/redis/go-redis/v9"
-	"project-go/webook/config"
 	"project-go/webook/internal/web/middleware"
-	"project-go/webook/pkg/ginx/middlewares/ratelimit"
 	"strings"
 	"time"
 
@@ -38,16 +35,16 @@ func initWebServer() *gin.Engine {
 	// 使用中间件
 	// 使用use 表明应用在server上的所有路由
 
-	redisClient := redis.NewClient(&redis.Options{
-		//Addr: "localhost:6379",
-		// 这里需要连接到K8s部署的redis
-		//Addr: "webook-live-redis:11479",
-		// 直接使用配置文件中的
-		Addr: config.Config.Redis.Addr,
-	})
+	//redisClient := redis.NewClient(&redis.Options{
+	//	//Addr: "localhost:6379",
+	//	// 这里需要连接到K8s部署的redis
+	//	//Addr: "webook-live-redis:11479",
+	//	// 直接使用配置文件中的
+	//	Addr: config.Config.Redis.Addr,
+	//})
 
 	// 使用第三方插件 通过redis 实现限流
-	server.Use(ratelimit.NewBuilder(redisClient, time.Second, 100).Build())
+	//server.Use(ratelimit.NewBuilder(redisClient, time.Second, 100).Build())
 
 	server.Use(cors.New(cors.Config{
 		//AllowOrigins:  []string{"http://localhost:8000"},
@@ -122,16 +119,3 @@ func initWebServer() *gin.Engine {
 
 	return server
 }
-
-//func initUser(db *gorm.DB, rdb redis.Cmdable) *user.UserHandler {
-//	ud := dao.NewUserDAO(db)
-//	uc := cache.NewUserCache(rdb)
-//	repo := repository.NewUserRepository(ud, uc)
-//	svc := service.NewUserService(repo)
-//	codeCache := cache.NewCodeCache(rdb)
-//	codeRepo := repository.NewCodeRepository(codeCache)
-//	smsSvc := memory.NewService()
-//	codeSvc := service.NewCodeService(codeRepo, smsSvc)
-//	u := user.NewUserHandler(svc, codeSvc)
-//	return u
-//}
