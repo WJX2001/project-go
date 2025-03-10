@@ -7,6 +7,17 @@ import (
 )
 
 type jwtHandler struct {
+	// access_key
+	atKey []byte
+	// refresh_token key
+	rtKey []byte
+}
+
+func newJwtHandler() jwtHandler {
+	return jwtHandler{
+		atKey: []byte("IjkxUQzY7dMQ4gdYLUMVvMXsIpl1E7f4"),
+		rtKey: []byte("IjkxUQzY7dMQ4gdYLUMVvMXsIpl1E7f4"),
+	}
 }
 
 func (h jwtHandler) setJWTToken(ctx *gin.Context, uid int64) error {
@@ -34,4 +45,9 @@ type UserClaims struct {
 	// 声明你自己的要放进去 token 里面的数据
 	Uid       int64
 	UserAgent string
+}
+
+type RefreshClaims struct {
+	Uid int64
+	jwt.RegisteredClaims
 }

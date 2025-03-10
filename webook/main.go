@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"github.com/gin-contrib/sessions/memstore"
+	"github.com/spf13/viper"
 	"project-go/webook/internal/web/middleware"
 	"strings"
 	"time"
@@ -9,25 +11,25 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	_ "github.com/spf13/viper/remote"
 )
 
 func main() {
-	// 进行初始化
-	//server := initWebServer()
-	//u := initUser(db, redisClient)
-	//u.RegisterRoutesUser(server)
+	//initViper()
+	//initViperV1()
+	initViperRemote()
 	// TODO: 使用 wire进行改造
 	server := InitWebServer()
-
 	server.Run(":8082")
+}
 
-	// K8S部署web服务器，首先去除其他依赖(Mysql和Redis的干扰)
-	//server := gin.Default()
-	//server.GET("/hello", func(c *gin.Context) {
-	//	c.String(http.StatusOK, "hello world 你来了")
-	//})
-	////
-	//server.Run(":8082")
+func initViperReader() {
+	viper.SetConfigType("yaml")
+	cfg := ``
+	err := viper.ReadConfig(bytes.NewReader([]byte(cfg)))
+	if err != nil {
+		panic(err)
+	}
 }
 
 func initWebServer() *gin.Engine {
@@ -118,4 +120,52 @@ func initWebServer() *gin.Engine {
 		Build())
 
 	return server
+}
+
+func initViperV1() {
+	viper.SetDefault("db.mysql.dsn",
+		"root:root@tcp(localhost:3306)/mysql")
+	viper.SetConfigFile("config/dev.yaml")
+	err := viper.ReadInConfig()
+	if err != nil {
+		panic(err)
+	}
+
+}
+
+func initViper() {
+	viper.SetDefault("db.mysql.dsn",
+		"root:root@tcp(localhost:3306)/mysql")
+	// 配置文件的名字，但是不包含文件扩展名
+	// 不包含 .go .yaml 之类的后缀名
+	viper.SetConfigName("dev")
+	// 告诉 viper 我的配置用的是yaml格式
+	// 现实有很多格式，JSON,XML,YAML
+	viper.SetConfigType("yaml")
+	// 当前工作目录下的 config 子目录
+	viper.AddConfigPath("./config")
+	// 读取配置到 viper里面，或者你可以理解为加载到内存里面
+	err := viper.ReadInConfig()
+	if err != nil {
+		panic(err)
+	}
+
+	//otherViper := viper.New()
+	//otherViper.SetConfigName("myjson")
+	//otherViper.AddConfigPath("./config")
+	//otherViper.SetConfigType("json")
+}
+
+func initViperRemote() {
+	viper.SetConfigType("yaml")
+	err := viper.AddRemoteProvider("etcd3",
+		// 通过webook 和其他使用 etcd的区别出来
+		"127.0.0.1:12379", "")
+	if err != nil {
+		panic(err)
+	}
+	err = viper.ReadRemoteConfig()
+	if err != nil {
+		panic(err)
+	}
 }

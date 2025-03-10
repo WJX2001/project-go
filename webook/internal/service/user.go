@@ -125,6 +125,8 @@ func (svc *UserService) FindOrCreateByWechat(ctx context.Context, info domain.We
 	//// 这里会遇到主从延迟的问题
 	////return u, err
 	//return svc.repo.FindByPhone(ctx, phone)
+	return domain.User{}, nil
+
 }
 
 func (svc *UserService) Profile(ctx context.Context, id int64) (domain.User, error) {

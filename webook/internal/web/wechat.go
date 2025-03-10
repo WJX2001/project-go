@@ -2,6 +2,8 @@ package web
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
+	uuid "github.com/lithammer/shortuuid/v4"
 	"net/http"
 	"project-go/webook/internal/service"
 	"project-go/webook/internal/service/oauth2/wechat"
@@ -27,7 +29,8 @@ func (h *OAuth2WechatHandler) RegisterRoutes(server *gin.Engine) {
 }
 
 func (h *OAuth2WechatHandler) AuthURL(ctx *gin.Context) {
-	url, err := h.svc.AuthURL(ctx)
+	state := uuid.New()
+	url, err := h.svc.AuthURL(ctx, state)
 	if err != nil {
 		ctx.JSON(http.StatusOK, Result{
 			Code: 5,
@@ -35,6 +38,15 @@ func (h *OAuth2WechatHandler) AuthURL(ctx *gin.Context) {
 		})
 		return
 	}
+
+	//token := jwt.NewWithClaims(jwt.SigningMethodHS256, StateClaims{
+	//	State: state,
+	//	RegisteredClaims: jwt.RegisteredClaims{
+	//		// 过期时间，你预期中一个用户完成登陆的时间
+	//		ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Minute * 10)),
+	//	},
+	//})
+
 	ctx.JSON(http.StatusOK, Result{
 		Data: url,
 	})
@@ -43,6 +55,7 @@ func (h *OAuth2WechatHandler) AuthURL(ctx *gin.Context) {
 func (h *OAuth2WechatHandler) Callback(ctx *gin.Context) {
 	code := ctx.Query("code")
 	state := ctx.Query("state")
+	// 校验一下state
 	info, err := h.svc.VerifyCode(ctx, code, state)
 	if err != nil {
 		ctx.JSON(http.StatusOK, Result{
@@ -104,3 +117,8 @@ func (h *OAuth2WechatHandler) Callback(ctx *gin.Context) {
 //func (h *OAuth2Handler) Callback(ctx *gin.Context) {
 //
 //}
+
+type StateClaims struct {
+	State string
+	jwt.RegisteredClaims
+}
