@@ -21,6 +21,7 @@ func InitWebServer(mdls []gin.HandlerFunc, hdl *web.UserHandler) *gin.Engine {
 func InitMiddlewares(redisClient redis.Cmdable) []gin.HandlerFunc {
 	return []gin.HandlerFunc{
 		corsHdl(),
+		//logger.NewBuilder().AllowReqBody().AllowRespBody().Build(),
 		middleware.NewLoginJWTMiddlewareBuilder().
 			JWTIgnorePaths("/user/signup").
 			JWTIgnorePaths("/user/login").

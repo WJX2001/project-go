@@ -2,22 +2,23 @@ package main
 
 import (
 	"bytes"
+	"errors"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/memstore"
+	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 	"project-go/webook/internal/web/middleware"
 	"strings"
 	"time"
-
-	"github.com/gin-contrib/cors"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-gonic/gin"
-	_ "github.com/spf13/viper/remote"
 )
 
 func main() {
 	//initViper()
 	//initViperV1()
-	initViperRemote()
+	//initViperRemote()
+	initLogger()
 	// TODO: 使用 wire进行改造
 	server := InitWebServer()
 	server.Run(":8082")
@@ -168,4 +169,23 @@ func initViperRemote() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func initLogger() {
+	logger, err := zap.NewDevelopment()
+	if err != nil {
+		panic(err)
+	}
+	// 如果不 replace,直接用 zap.L() 你啥都打不出来
+	zap.ReplaceGlobals(logger)
+	zap.L().Info("hello，你搞好了")
+
+	type Demo struct {
+		Name string `json:"name"`
+	}
+
+	zap.L().Info("这是实验参数",
+		zap.Error(errors.New("这是一个error")),
+		zap.Int64("id", 123),
+		zap.Any("一个结构体", Demo{Name: "hello"}))
 }

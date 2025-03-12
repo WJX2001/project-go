@@ -6,6 +6,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"project-go/webook/internal/domain"
 	"project-go/webook/internal/repository"
+	"project-go/webook/pkg/logger"
 )
 
 var (
@@ -28,11 +29,13 @@ type UserServiceInterface interface {
 
 type UserService struct {
 	repo repository.UserRepository
+	l    logger.LoggerV1
 }
 
-func NewUserService(repo repository.UserRepository) UserServiceInterface {
+func NewUserService(repo repository.UserRepository, l logger.LoggerV1) UserServiceInterface {
 	return &UserService{
 		repo: repo,
+		l:    l,
 	}
 }
 
@@ -91,6 +94,7 @@ func (svc *UserService) FindOrCreate(ctx context.Context, phone string) (domain.
 		// 不为 ErrUserNotFound 的也会进来这里
 		return u, err
 	}
+	svc.l.Info("用户未注册", logger.String("phone", phone))
 	// 明确知道，没有这个用户
 	u = domain.User{
 		Phone: phone,

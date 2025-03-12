@@ -5,6 +5,7 @@ import (
 	regexp "github.com/dlclark/regexp2"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 	"net/http"
 	"project-go/webook/internal/domain"
 	service "project-go/webook/internal/service"
@@ -74,6 +75,12 @@ func (u *UserHandler) LoginSMS(ctx *gin.Context) {
 			Code: 5,
 			Msg:  "系统错误",
 		})
+		zap.L().Error("校验验证码出错", zap.Error(err),
+			// 不能这样打，因为手机号码是敏感数据，不能打日志里面
+			// 打印加密后的串
+
+			zap.String("手机号码", req.Phone))
+		zap.L().Debug("", zap.String("手机号码", req.Phone))
 		return
 	}
 
@@ -135,6 +142,7 @@ func (u *UserHandler) SendLoginSMSCode(ctx *gin.Context) {
 			Msg: "发送成功",
 		})
 	case service.ErrCodeSendTooMany:
+
 		ctx.JSON(http.StatusOK, Result{
 			Msg: "发送太频繁，请稍后再试",
 		})
@@ -438,6 +446,12 @@ func (u *UserHandler) Profile(ctx *gin.Context) {
 	})
 
 }
+
+// RefreshToken 可以同时刷新长短 token，用 redis 来记录是否有效，即refresh_token是一次性
+//func (u *UserHandler) RefreshToken(ctx *gin.Context) {
+//	// 只有这个接口，拿出来的才是refresh
+//	//refreshToken :=
+//}
 
 //type UserClaims struct {
 //	jwt.RegisteredClaims
